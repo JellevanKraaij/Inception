@@ -1,0 +1,72 @@
+services:
+  nginx:
+    image: nginx
+    container_name: nginx
+    build: requirements/nginx
+    ports:
+      - ${INCEPTION_PORT}:${INCEPTION_PORT}
+    environment:
+      - NGINX_SERVER_NAME=${INCEPTION_NAME}
+      - NGINX_SERVER_PORT=${INCEPTION_PORT}
+      - NGINX_PHP_HOST=wordpress
+      - NGINX_PHP_PORT=9000
+    networks:
+      - internal
+    volumes:
+      - wordpress:/var/www/html:ro
+    restart: unless-stopped
+
+  wordpress:
+    image: wordpress
+    container_name: wordpress
+    build: requirements/wordpress
+    volumes:
+      - wordpress:/var/www/html
+    environment:
+      - WORDPRESS_URL=${INCEPTION_URL}
+      - WORDPRESS_TITLE=${INCEPTION_TITLE}
+      - WORDPRESS_ADMIN_USER=${INCEPTION_ADMIN_USER}
+      - WORDPRESS_ADMIN_PASSWORD=${INCEPTION_ADMIN_PASSWORD}
+      - WORDPRESS_ADMIN_EMAIL=${INCEPTION_ADMIN_EMAIL}
+      - WORDPRESS_USER=${INCEPTION_USER}
+      - WORDPRESS_USER_PASSWORD=${INCEPTION_PASSWORD}
+      - WORDPRESS_USER_EMAIL=${INCEPTION_EMAIL}
+      
+      - WORDPRESS_DB_HOST=mariadb
+      - WORDPRESS_DB_NAME=wordpress
+      - WORDPRESS_DB_USER=${INCEPTION_DATABASE_USER}
+      - WORDPRESS_DB_PASSWORD=${INCEPTION_DATABASE_PASSWORD}
+    networks:
+      - internal
+    restart: unless-stopped
+
+  mariadb:
+    image: mariadb
+    container_name: mariadb
+    build: requirements/mariadb
+    volumes:
+      - database:/var/lib/mysql
+    environment:
+      - MARIADB_DATABASE=wordpress
+      - MARIADB_USER=${INCEPTION_DATABASE_USER}
+      - MARIADB_PASSWORD=${INCEPTION_DATABASE_PASSWORD}
+    networks:
+      - internal
+    restart: unless-stopped
+
+networks:
+  internal:
+
+volumes:
+  wordpress:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${HOME}/data/wordpress
+      o: bind
+  database:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${HOME}/data/database
+      o: bind
